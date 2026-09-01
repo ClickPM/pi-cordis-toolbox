@@ -1,0 +1,11 @@
+{
+  "id": "text-tools",
+  "name": "Text Tools",
+  "version": "0.1.0",
+  "description": "Deterministic read-only text transformation and extraction operations.",
+  "keywords": ["text", "string", "transform", "extract", "summarize"],
+  "capabilities": ["find text", "extract lines", "count text"],
+  "entry": "index.ts",
+  "readme": "PLUGIN.md",
+  "risk": "read-only"
+}
