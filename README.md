@@ -28,16 +28,22 @@ plugins/*/index.ts                    # 延迟导入的已有插件代码
 
 ## 使用
 
-在开发目录直接加载：
+从 npm 安装：
 
 ```bash
-pi install G:/pi-cordis-toolbox
+pi install npm:pi-cordis-toolbox
 ```
 
-或者临时测试：
+或者临时试用，不写入设置：
 
 ```bash
-pi -e G:/pi-cordis-toolbox
+pi -e npm:pi-cordis-toolbox
+```
+
+本地开发时用仓库路径加载：
+
+```bash
+pi install /path/to/pi-cordis-toolbox
 ```
 
 项目插件放置在：
