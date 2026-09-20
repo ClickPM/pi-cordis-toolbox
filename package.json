@@ -1,6 +1,6 @@
 {
   "name": "pi-cordis-toolbox",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A fixed Pi toolbox_run facade backed by an ephemeral Cordis plugin runtime and nested agent loop.",
   "type": "module",
   "keywords": [
