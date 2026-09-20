@@ -1,0 +1,24 @@
+{
+  "id": "codex-subagent",
+  "name": "Codex Subagent",
+  "version": "0.1.0",
+  "description": "Delegate coding, code analysis, debugging, and implementation tasks to an isolated local Codex subagent.",
+  "keywords": [
+    "codex",
+    "subagent",
+    "coding",
+    "delegate",
+    "review",
+    "implementation",
+    "ai"
+  ],
+  "capabilities": [
+    "delegate coding task",
+    "codex code analysis",
+    "codex review",
+    "execute implementation"
+  ],
+  "entry": "index.ts",
+  "readme": "PLUGIN.md",
+  "risk": "read-only"
+}
