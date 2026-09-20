@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -21,7 +22,17 @@ function fakeModel(): Model<any> {
   };
 }
 
-test("codex-subagent plugin discovery, loading, and disposal", async () => {
+// The live round-trip needs a working `codex` on PATH. CI runners do not have one,
+// so probe once and keep the rest of the test (discovery, loading, disposal) running.
+const CODEX_AVAILABLE = (() => {
+  try {
+    return spawnSync("codex", ["--version"], { shell: true, timeout: 15_000, stdio: "ignore" }).status === 0;
+  } catch {
+    return false;
+  }
+})();
+
+test("codex-subagent plugin discovery, loading, and disposal", async (t) => {
   const cwd = await mkdtemp(path.join(os.tmpdir(), "pi-cordis-codex-test-"));
   try {
     const runtime = new ToolboxRuntime({
@@ -46,19 +57,23 @@ test("codex-subagent plugin discovery, loading, and disposal", async () => {
     assert.ok(runtime.operations.get("codex.execute"));
 
     // 3. Invoke codex.ask with local Codex CLI (read-only ping)
-    const result = await runtime.operations.execute(
-      "codex.ask",
-      { prompt: "Reply with exactly: CODEX_TEST_VERIFIED" },
-      {
-        cwd,
-        signal: new AbortController().signal,
-        policy: runtime.policy,
-        callId: "test-call-1",
-        runtime: runtime.root,
-      },
-    );
+    if (CODEX_AVAILABLE) {
+      const result = await runtime.operations.execute(
+        "codex.ask",
+        { prompt: "Reply with exactly: CODEX_TEST_VERIFIED" },
+        {
+          cwd,
+          signal: new AbortController().signal,
+          policy: runtime.policy,
+          callId: "test-call-1",
+          runtime: runtime.root,
+        },
+      );
 
-    assert.ok(result.content.includes("CODEX_TEST_VERIFIED"));
+      assert.ok(result.content.includes("CODEX_TEST_VERIFIED"));
+    } else {
+      t.diagnostic("codex CLI not on PATH - skipped the live codex.ask round-trip");
+    }
 
     // 4. Dispose
     await runtime.loader.dispose();
