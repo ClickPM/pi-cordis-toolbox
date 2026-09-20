@@ -5,6 +5,7 @@ import path from "node:path";
 import test from "node:test";
 import {
   createAssistantMessageEventStream,
+  getCurrentTools,
   type AssistantMessage,
   type Context,
   type Model,
@@ -71,7 +72,8 @@ function mockStream(model: Model<any>) {
         arguments: { pluginId: "text-tools" },
       }], "toolUse");
     } else if (turn === 3) {
-      assert.ok(context.tools?.some((tool) => tool.name === "text.stats"));
+      const activeTools = context.tools ?? getCurrentTools(context.messages);
+      assert.ok(activeTools.some((tool) => tool.name === "text.stats"));
       message = assistant(model, [{
         type: "toolCall",
         id: "stats-1",

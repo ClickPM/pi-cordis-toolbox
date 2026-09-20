@@ -5,11 +5,10 @@ import { PluginLoader, serializeRecord } from "./plugin-loader.ts";
 import type { OperationRegistry } from "./operation-registry.ts";
 import type { ToolboxLimits, ToolboxPolicy, ToolboxRunDetails } from "./types.ts";
 
-function jsonResult(value: unknown, addedToolNames?: string[]): AgentToolResult<unknown> {
+function jsonResult(value: unknown): AgentToolResult<unknown> {
   return {
     content: [{ type: "text", text: JSON.stringify(value, null, 2) }],
     details: value,
-    addedToolNames,
   };
 }
 
@@ -88,13 +87,10 @@ export function createMetaTools(options: {
         if (!details.loadedPlugins.includes(input.pluginId)) details.loadedPlugins.push(input.pluginId);
         const allNames = refreshTools();
         const added = allNames.filter((name) => !before.has(name));
-        return jsonResult(
-          {
-            loaded: serializeRecord(loaded.record),
-            addedOperations: added,
-          },
-          added,
-        );
+        return jsonResult({
+          loaded: serializeRecord(loaded.record),
+          addedOperations: added,
+        });
       },
     },
     {
