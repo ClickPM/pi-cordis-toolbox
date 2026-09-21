@@ -9,16 +9,25 @@ import { runNestedAgent } from "../src/core/agent-runner.ts";
 import { fallbackJudge, judgeTaskWithJev } from "../src/core/router.ts";
 import { ToolboxRuntime } from "../src/core/runtime.ts";
 
-const SUBAGENT_CLI_AVAILABLE = (() => {
+function isAgentCliAvailable(agent: "codex" | "cursor" | "pi"): boolean {
   try {
-    return (
-      spawnSync("pi", ["--version"], { shell: true, timeout: 5000, stdio: "ignore" }).status === 0 ||
-      spawnSync("codex", ["--version"], { shell: true, timeout: 5000, stdio: "ignore" }).status === 0
-    );
+    if (agent === "codex") {
+      const res = spawnSync("codex", ["--version"], { shell: true, timeout: 5000, stdio: "ignore" });
+      return res.status === 0 && !res.error;
+    }
+    if (agent === "cursor") {
+      const res = spawnSync("cursor-agent", ["--version"], { shell: true, timeout: 5000, stdio: "ignore" });
+      return res.status === 0 && !res.error;
+    }
+    if (agent === "pi") {
+      const res = spawnSync("pi", ["--version"], { shell: true, timeout: 5000, stdio: "ignore" });
+      return res.status === 0 && !res.error;
+    }
+    return false;
   } catch {
     return false;
   }
-})();
+}
 
 function fakeModel(): Model<any> {
   return {
@@ -49,7 +58,6 @@ test("fallback heuristic router correctly classifies intentions", () => {
 
 test("Jev System One model autonomously routes tasks and evaluates write requirements", async () => {
   if (!process.env.TYPESAFE_API_KEY) {
-    // If no key in current environment, skip live API test
     return;
   }
 
@@ -69,11 +77,7 @@ test("Jev System One model autonomously routes tasks and evaluates write require
   assert.ok(searchDecision.confidence > 0.5);
 });
 
-test("runNestedAgent routes via Jev and dispatches to chosen subagent", async () => {
-  if (!SUBAGENT_CLI_AVAILABLE) {
-    return;
-  }
-
+test("runNestedAgent routes via Jev and dispatches to chosen subagent", async (t) => {
   const cwd = await mkdtemp(path.join(os.tmpdir(), "pi-cordis-router-test-"));
   const model = fakeModel();
   const runtime = new ToolboxRuntime({
@@ -85,6 +89,12 @@ test("runNestedAgent routes via Jev and dispatches to chosen subagent", async ()
 
   try {
     await runtime.initialize();
+    const decision = await judgeTaskWithJev("Reply with exactly: AGENT_RUNNER_VERIFIED", cwd);
+    if (!isAgentCliAvailable(decision.targetAgent)) {
+      t.diagnostic(`${decision.targetAgent} CLI not on PATH - skipped live dispatch`);
+      return;
+    }
+
     const result = await runNestedAgent({
       goal: "Reply with exactly: AGENT_RUNNER_VERIFIED",
       runtime,
