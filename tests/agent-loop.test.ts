@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -7,6 +8,17 @@ import type { Model } from "@earendil-works/pi-ai";
 import { runNestedAgent } from "../src/core/agent-runner.ts";
 import { fallbackJudge, judgeTaskWithJev } from "../src/core/router.ts";
 import { ToolboxRuntime } from "../src/core/runtime.ts";
+
+const SUBAGENT_CLI_AVAILABLE = (() => {
+  try {
+    return (
+      spawnSync("pi", ["--version"], { shell: true, timeout: 5000, stdio: "ignore" }).status === 0 ||
+      spawnSync("codex", ["--version"], { shell: true, timeout: 5000, stdio: "ignore" }).status === 0
+    );
+  } catch {
+    return false;
+  }
+})();
 
 function fakeModel(): Model<any> {
   return {
@@ -58,6 +70,10 @@ test("Jev System One model autonomously routes tasks and evaluates write require
 });
 
 test("runNestedAgent routes via Jev and dispatches to chosen subagent", async () => {
+  if (!SUBAGENT_CLI_AVAILABLE) {
+    return;
+  }
+
   const cwd = await mkdtemp(path.join(os.tmpdir(), "pi-cordis-router-test-"));
   const model = fakeModel();
   const runtime = new ToolboxRuntime({
