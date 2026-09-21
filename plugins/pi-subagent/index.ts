@@ -71,7 +71,8 @@ async function runPiTask(options: PiRunOptions): Promise<OperationResult> {
     args.push("--model", model.trim());
   }
 
-  args.push(prompt);
+  const safePrompt = process.platform === "win32" ? `"${prompt.replace(/"/g, '\\"')}"` : prompt;
+  args.push(safePrompt);
 
   const child = spawn("pi", args, {
     cwd: targetDir,
