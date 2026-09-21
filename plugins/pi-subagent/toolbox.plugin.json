@@ -2,6 +2,7 @@
   "id": "pi-subagent",
   "name": "Pi Subagent",
   "version": "0.1.0",
+  "kind": "subagent",
   "description": "Delegate general research, documentation, terminal tasks, and codebase reconnaissance to an isolated Pi subagent.",
   "keywords": [
     "pi",

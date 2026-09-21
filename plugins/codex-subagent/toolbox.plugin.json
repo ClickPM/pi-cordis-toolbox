@@ -2,6 +2,7 @@
   "id": "codex-subagent",
   "name": "Codex Subagent",
   "version": "0.1.0",
+  "kind": "subagent",
   "description": "Delegate coding, code analysis, debugging, and implementation tasks to an isolated local Codex subagent.",
   "keywords": [
     "codex",

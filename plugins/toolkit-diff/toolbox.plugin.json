@@ -1,0 +1,25 @@
+{
+  "id": "toolkit-diff",
+  "name": "Toolkit Structured Diff",
+  "version": "0.1.0",
+  "kind": "utility",
+  "description": "Compute structured unified diffs and summary statistics between files or text content without LLM tokens.",
+  "keywords": [
+    "diff",
+    "compare",
+    "text",
+    "files",
+    "patch",
+    "deterministic",
+    "toolkit"
+  ],
+  "capabilities": [
+    "compute diff",
+    "compare files",
+    "diff summary",
+    "structured diff"
+  ],
+  "entry": "index.ts",
+  "readme": "PLUGIN.md",
+  "risk": "read-only"
+}

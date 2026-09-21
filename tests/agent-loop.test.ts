@@ -9,7 +9,8 @@ import { runNestedAgent } from "../src/core/agent-runner.ts";
 import { fallbackJudge, judgeTaskWithJev } from "../src/core/router.ts";
 import { ToolboxRuntime } from "../src/core/runtime.ts";
 
-function isAgentCliAvailable(agent: "codex" | "cursor" | "pi"): boolean {
+function isAgentCliAvailable(agent?: "codex" | "cursor" | "pi"): boolean {
+  if (!agent) return false;
   try {
     if (agent === "codex") {
       const res = spawnSync("codex", ["--version"], { shell: true, timeout: 5000, stdio: "ignore" });

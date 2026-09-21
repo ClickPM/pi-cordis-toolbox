@@ -1,0 +1,26 @@
+{
+  "id": "checkpoint-rewind",
+  "name": "Workspace Checkpoint & Rewind",
+  "version": "0.1.0",
+  "kind": "service",
+  "provides": ["checkpoint"],
+  "description": "Create workspace filesystem checkpoints and rollback on error, inspired by Claude Code rewind.",
+  "keywords": [
+    "checkpoint",
+    "rewind",
+    "rollback",
+    "git",
+    "safety",
+    "transaction",
+    "snapshot"
+  ],
+  "capabilities": [
+    "create workspace checkpoint",
+    "rollback checkpoint",
+    "list checkpoints",
+    "transaction safety"
+  ],
+  "entry": "index.ts",
+  "readme": "PLUGIN.md",
+  "risk": "write"
+}

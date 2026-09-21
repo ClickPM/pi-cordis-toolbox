@@ -1,0 +1,25 @@
+{
+  "id": "webfetch",
+  "name": "Web Fetch & HTML Parser",
+  "version": "0.1.0",
+  "kind": "utility",
+  "description": "Safe, lightweight HTTP/HTTPS web fetcher with SSRF protection and HTML-to-Markdown conversion.",
+  "keywords": [
+    "web",
+    "fetch",
+    "http",
+    "url",
+    "scrape",
+    "markdown",
+    "ssrf-guard"
+  ],
+  "capabilities": [
+    "fetch web page",
+    "url to markdown",
+    "extract web content",
+    "http get"
+  ],
+  "entry": "index.ts",
+  "readme": "PLUGIN.md",
+  "risk": "network"
+}

@@ -1,6 +1,6 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import type { CatalogRecord, PluginManifest } from "./types.ts";
+import type { CatalogRecord, PluginKind, PluginManifest } from "./types.ts";
 
 const MANIFEST_NAME = "toolbox.plugin.json";
 const SAFE_ID = /^[a-z][a-z0-9-]{1,80}$/;
@@ -43,6 +43,22 @@ function parseManifest(value: unknown, manifestPath: string): PluginManifest {
   if (!["read-only", "write", "network", "unsafe"].includes(risk as string)) {
     throw new TypeError(`Invalid plugin risk "${String(risk)}" in ${manifestPath}`);
   }
+  const validKinds: PluginKind[] = ["utility", "service", "subagent"];
+  let kind = raw.kind as PluginKind | undefined;
+  if (kind !== undefined && !validKinds.includes(kind)) {
+    throw new TypeError(`Invalid plugin kind "${String(kind)}" in ${manifestPath}`);
+  }
+  if (!kind) {
+    const id = raw.id as string;
+    const keywords = Array.isArray(raw.keywords) ? (raw.keywords as string[]) : [];
+    if (id.endsWith("-subagent") || keywords.includes("subagent")) {
+      kind = "subagent";
+    } else {
+      kind = "utility";
+    }
+  }
+  const provides = raw.provides === undefined ? undefined : parseStringArray(raw.provides, "provides");
+
   return {
     id: raw.id as string,
     name: raw.name as string,
@@ -55,6 +71,8 @@ function parseManifest(value: unknown, manifestPath: string): PluginManifest {
     references: raw.references === undefined ? undefined : parseStringArray(raw.references, "references"),
     risk: risk as PluginManifest["risk"],
     requires: raw.requires === undefined ? undefined : parseStringArray(raw.requires, "requires"),
+    kind,
+    provides,
   };
 }
 
@@ -121,6 +139,26 @@ export class PluginCatalog {
 
   get(id: string): CatalogRecord | undefined {
     return this.records.get(id);
+  }
+
+  listByKind(kind: PluginKind): CatalogRecord[] {
+    return this.list().filter((record) => record.manifest.kind === kind);
+  }
+
+  listByCapability(capability: string): CatalogRecord[] {
+    const target = capability.toLowerCase();
+    return this.list().filter((record) =>
+      record.manifest.capabilities.some(
+        (c) => c.toLowerCase() === target || c.toLowerCase().includes(target),
+      ),
+    );
+  }
+
+  getService(serviceName: string): CatalogRecord | undefined {
+    return this.list().find(
+      (record) =>
+        record.manifest.kind === "service" && record.manifest.provides?.includes(serviceName),
+    );
   }
 
   search(query: string, limit = 8): CatalogRecord[] {

@@ -1,14 +1,18 @@
 {
   "name": "pi-cordis-toolbox",
-  "version": "0.3.1",
-  "description": "Pi heterogeneous subagent orchestrator powered by Cordis microkernel and TypeSafe Jev intent routing.",
+  "version": "0.4.0",
+  "description": "Dynamic Cordis microkernel plugin orchestrator and ephemeral sandbox for Pi, powered by TypeSafe Jev intent composition.",
   "type": "module",
   "keywords": [
     "pi-package",
     "cordis",
     "subagent",
     "typesafe",
-    "codex",
+    "jev",
+    "checkpoint",
+    "rewind",
+    "diff",
+    "webfetch",
     "agent-tools"
   ],
   "pi": {

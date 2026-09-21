@@ -2,7 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { Context, type Fiber, type Plugin } from "@deepseek-ai/cordis";
 import { createJiti } from "jiti";
-import type { CatalogRecord, LoadedPlugin } from "./types.ts";
+import type { CatalogRecord, LoadedPlugin, ToolboxPolicy } from "./types.ts";
 import type { OperationRegistry } from "./operation-registry.ts";
 import { PluginCatalog } from "./catalog.ts";
 
@@ -27,11 +27,18 @@ export class PluginLoader {
   private readonly root: Context;
   private readonly catalog: PluginCatalog;
   private readonly operations: OperationRegistry;
+  private readonly policy?: ToolboxPolicy;
 
-  constructor(root: Context, catalog: PluginCatalog, operations: OperationRegistry) {
+  constructor(
+    root: Context,
+    catalog: PluginCatalog,
+    operations: OperationRegistry,
+    policy?: ToolboxPolicy,
+  ) {
     this.root = root;
     this.catalog = catalog;
     this.operations = operations;
+    this.policy = policy;
     this.jiti = createJiti(import.meta.url, { interopDefault: true });
   }
 
@@ -47,8 +54,19 @@ export class PluginLoader {
     }
     const record = this.catalog.get(id);
     if (!record) throw new Error(`Unknown plugin: ${id}`);
-    if (record.manifest.risk !== "read-only") {
-      throw new Error(`Plugin "${id}" is not read-only and is blocked by the MVP policy.`);
+    const risk = record.manifest.risk ?? "read-only";
+    if (this.policy) {
+      if (risk === "write" && !this.policy.allowWriteOperations) {
+        throw new Error(`Plugin "${id}" is write-capable and is blocked by policy.`);
+      }
+      if (risk === "network" && !this.policy.allowNetworkOperations) {
+        throw new Error(`Plugin "${id}" is network-capable and is blocked by policy.`);
+      }
+      if (risk === "unsafe") {
+        throw new Error(`Plugin "${id}" is marked unsafe and cannot run.`);
+      }
+    } else if (risk !== "read-only") {
+      throw new Error(`Plugin "${id}" is not read-only and is blocked by the default policy.`);
     }
     const entryPath = path.resolve(record.rootDir, record.manifest.entry);
     if (!isSafeRelativePath(record.rootDir, record.manifest.entry)) {

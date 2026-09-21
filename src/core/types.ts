@@ -44,6 +44,8 @@ export interface ToolboxRunInput {
   policy?: Partial<ToolboxPolicy>;
 }
 
+export type PluginKind = "utility" | "service" | "subagent";
+
 export interface PluginManifest {
   id: string;
   name: string;
@@ -56,6 +58,8 @@ export interface PluginManifest {
   references?: string[];
   risk?: "read-only" | "write" | "network" | "unsafe";
   requires?: string[];
+  kind?: PluginKind;
+  provides?: string[];
 }
 
 export interface CatalogRecord {
@@ -105,14 +109,22 @@ export interface ToolboxAgentTool extends AgentTool<any, any> {
   toolboxKind?: "meta" | "operation";
 }
 
-export interface JevRoutingInfo {
+export type ExecutionMode = "deterministic_tools" | "direct_subagent" | "composite";
+
+export interface JevPlan {
   model: string;
-  targetAgent: "codex" | "pi";
+  executionMode: ExecutionMode;
+  targetAgent?: "codex" | "pi";
+  requiredPlugins: string[];
   requiresWrite: boolean;
+  requiresNetwork: boolean;
   confidence: number;
-  probabilities: Record<string, number>;
   complexity: number;
+  probabilities?: Record<string, number>;
+  reasoning?: string;
 }
+
+export type JevRoutingInfo = JevPlan;
 
 export interface ToolboxRunDetails {
   discoveredPlugins: Array<{ id: string; source: CatalogRecord["source"] }>;

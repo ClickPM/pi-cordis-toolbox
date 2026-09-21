@@ -63,7 +63,7 @@ export class ToolboxRuntime {
     await Promise.all(this.baseFibers);
     this.operations = this.root.get("toolboxOperations") as OperationRegistry;
     if (!this.operations) throw new Error("Failed to initialize toolbox operation registry.");
-    this.loader = new PluginLoader(this.root, this.catalog, this.operations);
+    this.loader = new PluginLoader(this.root, this.catalog, this.operations, this.policy);
     await this.catalog.refresh();
   }
 
