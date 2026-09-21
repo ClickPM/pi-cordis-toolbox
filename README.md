@@ -13,8 +13,7 @@ Pi 主会话只注册固定入口 `toolbox_run`。每次调用时：
 
 | 子代理插件 | 底层引擎与协议 | 核心能力定位 | 暴露操作 |
 | :--- | :--- | :--- | :--- |
-| **`codex-subagent`** | OpenAI Codex CLI (`codex exec`) | 重型代码生成、具体实现、Bug 修复、单测编写、深层重构 | `codex.ask` (只读)<br>`codex.execute` (写入) |
-| **`cursor-subagent`** | Cursor Agent CLI (`cursor-agent` / `agent`) | 跨文件语义代码搜索、代码库拓扑导航、架构理解、多文件编辑 | `cursor.ask` (只读)<br>`cursor.execute` (写入) |
+| **`codex-subagent`** | OpenAI Codex CLI (`codex exec`) | 代码编写、系统实现、Bug 修复、单测编写、深层重构与分析 | `codex.ask` (只读)<br>`codex.execute` (写入) |
 | **`pi-subagent`** | Pi Coding Agent (`pi -p`) | 通用环境侦察、Markdown 文档撰写、综合调研、终端任务汇总 | `pi.run` (只读)<br>`pi.execute` (写入) |
 
 ---
@@ -30,7 +29,6 @@ src/core/plugin-loader.ts             # Jiti 动态导入与 Cordis Fiber 生命
 src/core/operation-registry.ts        # 内部原子操作注册、TypeBox 校验与策略守卫
 src/core/runtime.ts                   # Cordis Root Context 运行时与回收
 plugins/codex-subagent/               # Codex 专业代码子代理插件
-plugins/cursor-subagent/              # Cursor 语义搜索与多文件子代理插件
 plugins/pi-subagent/                  # Pi 通用调研与文档子代理插件
 ```
 

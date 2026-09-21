@@ -107,7 +107,7 @@ export interface ToolboxAgentTool extends AgentTool<any, any> {
 
 export interface JevRoutingInfo {
   model: string;
-  targetAgent: "codex" | "cursor" | "pi";
+  targetAgent: "codex" | "pi";
   requiresWrite: boolean;
   confidence: number;
   probabilities: Record<string, number>;

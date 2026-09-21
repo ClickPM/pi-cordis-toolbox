@@ -7,12 +7,10 @@ export function fallbackJudge(goal: string): JevRoutingInfo {
   const requiresWrite = /write|create|modify|edit|implement|fix|refactor|add|delete|remove|update|写|改|加|修复|创建|实现/.test(
     lower,
   );
-  let targetAgent: "codex" | "cursor" | "pi" = "codex";
+  let targetAgent: "codex" | "pi" = "codex";
 
   if (/doc|summary|summarize|explain|readme|research|文档|总结|总结一下|调研/.test(lower)) {
     targetAgent = "pi";
-  } else if (/search|find|where|locate|navigat|architect|查|搜|看|架构|位置|哪/.test(lower)) {
-    targetAgent = "cursor";
   } else {
     targetAgent = "codex";
   }
@@ -44,8 +42,7 @@ export async function judgeTaskWithJev(goal: string, cwd: string): Promise<JevRo
         target_agent: choice(
           "Which specialized autonomous agent is best suited to handle this task?",
           {
-            codex: "Heavy code generation, concrete implementation, bug fixing, test writing, refactoring",
-            cursor: "Multi-file semantic code exploration, codebase navigation, architectural understanding, multi-file edits",
+            codex: "Code generation, code analysis, bug fixing, test writing, refactoring, implementation",
             pi: "General reconnaissance, research, documentation drafting, bash/terminal automation, high-level summaries",
           },
         ),
@@ -60,7 +57,7 @@ export async function judgeTaskWithJev(goal: string, cwd: string): Promise<JevRo
       },
     });
 
-    const agentChoice = response.answers.target_agent.choice as "codex" | "cursor" | "pi";
+    const agentChoice = response.answers.target_agent.choice as "codex" | "pi";
     const requiresWrite = (response.answers.requires_write.noul ?? 0) >= 0.5;
 
     return {

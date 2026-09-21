@@ -34,21 +34,21 @@ test("catalog is progressive and subagent plugin disposal removes registered ope
     assert.deepEqual(runtime.operations.list(), []);
 
     // Verify subagent discovery
-    const cursorMatches = runtime.catalog.search("cursor navigation search");
-    assert.ok(cursorMatches.some((m) => m.manifest.id === "cursor-subagent"));
+    const codexMatches = runtime.catalog.search("codex coding delegate");
+    assert.ok(codexMatches.some((m) => m.manifest.id === "codex-subagent"));
 
     const piMatches = runtime.catalog.search("pi research documentation");
     assert.ok(piMatches.some((m) => m.manifest.id === "pi-subagent"));
 
-    // Load cursor subagent
-    await runtime.loader.load("cursor-subagent", runtime.limits.maxPlugins);
-    assert.ok(runtime.operations.get("cursor.ask"));
-    assert.ok(runtime.operations.get("cursor.execute"));
+    // Load pi subagent
+    await runtime.loader.load("pi-subagent", runtime.limits.maxPlugins);
+    assert.ok(runtime.operations.get("pi.run"));
+    assert.ok(runtime.operations.get("pi.execute"));
 
     // Disposal removes operations
     await runtime.loader.dispose();
-    assert.equal(runtime.operations.get("cursor.ask"), undefined);
-    assert.equal(runtime.operations.get("cursor.execute"), undefined);
+    assert.equal(runtime.operations.get("pi.run"), undefined);
+    assert.equal(runtime.operations.get("pi.execute"), undefined);
 
     await runtime.dispose();
     assert.equal(runtime.details.disposal, "completed");
@@ -68,12 +68,12 @@ test("subagent rejects escaping target workdir", async () => {
       signal: new AbortController().signal,
     });
     await runtime.initialize();
-    await runtime.loader.load("cursor-subagent", runtime.limits.maxPlugins);
+    await runtime.loader.load("codex-subagent", runtime.limits.maxPlugins);
 
     await assert.rejects(
       () =>
         runtime.operations.execute(
-          "cursor.ask",
+          "codex.ask",
           { prompt: "ping", workdir: path.join("..", path.basename(outside)) },
           {
             cwd,

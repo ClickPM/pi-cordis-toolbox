@@ -1,6 +1,6 @@
 {
   "name": "pi-cordis-toolbox",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Pi heterogeneous subagent orchestrator powered by Cordis microkernel and TypeSafe Jev intent routing.",
   "type": "module",
   "keywords": [
@@ -9,7 +9,6 @@
     "subagent",
     "typesafe",
     "codex",
-    "cursor",
     "agent-tools"
   ],
   "pi": {

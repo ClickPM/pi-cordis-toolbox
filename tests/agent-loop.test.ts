@@ -49,11 +49,9 @@ test("fallback heuristic router correctly classifies intentions", () => {
   assert.equal(codeTask.targetAgent, "codex");
   assert.equal(codeTask.requiresWrite, true);
 
-  const searchTask = fallbackJudge("Find where the payment gateway URL is configured");
-  assert.equal(searchTask.targetAgent, "cursor");
-
   const docTask = fallbackJudge("Summarize the project README and architectural notes");
   assert.equal(docTask.targetAgent, "pi");
+  assert.equal(docTask.requiresWrite, false);
 });
 
 test("Jev System One model autonomously routes tasks and evaluates write requirements", async () => {
@@ -69,12 +67,12 @@ test("Jev System One model autonomously routes tasks and evaluates write require
   assert.equal(codeDecision.requiresWrite, true);
   assert.ok(codeDecision.confidence > 0.5);
 
-  const searchDecision = await judgeTaskWithJev(
-    "Locate and explain where the flight search API endpoint is registered across files",
+  const docDecision = await judgeTaskWithJev(
+    "Summarize and draft documentation for the flight search API endpoint",
     process.cwd(),
   );
-  assert.equal(searchDecision.targetAgent, "cursor");
-  assert.ok(searchDecision.confidence > 0.5);
+  assert.equal(docDecision.targetAgent, "pi");
+  assert.ok(docDecision.confidence > 0.5);
 });
 
 test("runNestedAgent routes via Jev and dispatches to chosen subagent", async (t) => {
