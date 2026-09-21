@@ -1,31 +1,19 @@
-import { Agent, type AgentEvent, type AgentOptions } from "@earendil-works/pi-agent-core";
-import type { AssistantMessage, Usage } from "@earendil-works/pi-ai";
-import { buildInternalSystemPrompt } from "./prompt.ts";
+import { judgeTaskWithJev } from "./router.ts";
 import { ToolboxRuntime } from "./runtime.ts";
-import type { StreamRuntime } from "./types.ts";
+import type { OperationContext, StreamRuntime } from "./types.ts";
 
-function textFromAssistant(message: AssistantMessage | undefined): string {
-  if (!message) return "";
-  return message.content
-    .filter((part): part is { type: "text"; text: string } => part.type === "text")
-    .map((part) => part.text)
-    .join("\n")
-    .trim();
-}
-
-function addUsage(target: ToolboxRuntime["details"]["usage"], usage: Usage): void {
-  target.input += usage.input;
-  target.output += usage.output;
-  target.totalTokens += usage.totalTokens;
-  target.cost += usage.cost.total;
-}
-
-function combineSignals(outer: AbortSignal | undefined, timeoutMs: number): {
+function combineSignals(
+  outer: AbortSignal | undefined,
+  timeoutMs: number,
+): {
   signal: AbortSignal;
   cancel: () => void;
 } {
   const timeoutController = new AbortController();
-  const timer = setTimeout(() => timeoutController.abort(new Error(`toolbox_run timed out after ${timeoutMs}ms`)), timeoutMs);
+  const timer = setTimeout(
+    () => timeoutController.abort(new Error(`toolbox_run timed out after ${timeoutMs}ms`)),
+    timeoutMs,
+  );
   const signal = outer
     ? AbortSignal.any([outer, timeoutController.signal])
     : timeoutController.signal;
@@ -41,75 +29,77 @@ export interface RunNestedAgentOptions {
 }
 
 export async function runNestedAgent(options: RunNestedAgentOptions): Promise<string> {
-  const { runtime, streamRuntime } = options;
+  const { runtime } = options;
   const combined = combineSignals(options.outerSignal, runtime.limits.timeoutMs);
-  let agent!: Agent;
-  const agentOptions: AgentOptions = {
-    initialState: {
-      systemPrompt: buildInternalSystemPrompt({
-        cwd: runtime.cwd,
-        limits: runtime.limits,
-        policy: runtime.policy,
-      }),
-      model: streamRuntime.model,
-      thinkingLevel: options.thinkingLevel,
-      tools: runtime.refreshTools(),
-    },
-    streamFn: (model, context, streamOptions) => streamRuntime.streamSimple(model, context, streamOptions),
-    getApiKey: streamRuntime.getApiKey,
-    toolExecution: "sequential",
-    shouldStopAfterTurn: () =>
-      runtime.details.modelTurns >= runtime.limits.maxTurns ||
-      runtime.details.operationCalls.length >= runtime.limits.maxOperations,
-    beforeToolCall: async ({ toolCall }) => {
-      combined.signal.throwIfAborted();
-      if (runtime.details.operationCalls.length >= runtime.limits.maxOperations) {
-        return { block: true, reason: "Toolbox operation budget exhausted.", terminate: true };
-      }
-      return undefined;
-    },
-    afterToolCall: async ({ toolCall, isError }) => {
-      runtime.details.operationCalls.push({
-        name: toolCall.name,
-        callId: toolCall.id,
-        isError,
-      });
-      return { details: undefined };
-    },
-    prepareNextTurnWithContext: (): { context: { systemPrompt: string; messages: any[]; tools: any[] } } => ({
-      context: {
-        systemPrompt: agent.state.systemPrompt,
-        messages: agent.state.messages,
-        tools: runtime.refreshTools(),
-      },
-    }),
-  };
-  agent = new Agent(agentOptions);
 
-  let lastAssistant: AssistantMessage | undefined;
-  agent.subscribe((event: AgentEvent) => {
-    if (event.type === "turn_end" && event.message.role === "assistant") {
-      runtime.details.modelTurns += 1;
-      lastAssistant = event.message;
-      addUsage(runtime.details.usage, event.message.usage);
-    }
-  });
-
-  const abortAgent = () => agent.abort();
-  combined.signal.addEventListener("abort", abortAgent, { once: true });
   try {
-    await agent.prompt(options.goal);
-    if (combined.signal.aborted) {
-      throw combined.signal.reason instanceof Error
-        ? combined.signal.reason
-        : new Error("toolbox_run aborted");
+    combined.signal.throwIfAborted();
+
+    // 1. Autonomous judgment using Jev System One model
+    const decision = await judgeTaskWithJev(options.goal, runtime.cwd);
+    runtime.details.routing = decision;
+
+    // 2. Discover and dynamically load the chosen specialized subagent plugin
+    const targetPluginId = `${decision.targetAgent}-subagent`;
+    let record = runtime.catalog.get(targetPluginId);
+
+    if (!record) {
+      const available = runtime.catalog.list();
+      if (available.length === 0) {
+        throw new Error("No subagent plugins found in toolbox catalog.");
+      }
+      record = available[0];
     }
-    if (agent.state.errorMessage) throw new Error(agent.state.errorMessage);
-    const output = textFromAssistant(lastAssistant);
-    if (!output) throw new Error("The internal toolbox agent returned no final text.");
-    return output;
+
+    await runtime.loader.load(record.manifest.id, runtime.limits.maxPlugins);
+    if (!runtime.details.loadedPlugins.includes(record.manifest.id)) {
+      runtime.details.loadedPlugins.push(record.manifest.id);
+    }
+
+    // 3. Resolve the exact operation (read-only vs write)
+    let opName = decision.requiresWrite
+      ? `${decision.targetAgent}.execute`
+      : decision.targetAgent === "pi"
+        ? "pi.run"
+        : `${decision.targetAgent}.ask`;
+
+    // Fallback if specific operation does not exist on current plugin
+    if (!runtime.operations.get(opName)) {
+      const allOps = runtime.operations.list();
+      if (allOps.length === 0) {
+        throw new Error(`Plugin "${record.manifest.id}" did not register any operations.`);
+      }
+      opName = allOps[0].name;
+    }
+
+    // 4. Execute the operation in the Cordis lifecycle scope
+    const opContext: OperationContext = {
+      signal: combined.signal,
+      cwd: runtime.cwd,
+      policy: runtime.policy,
+      callId: `jev-${decision.targetAgent}-${Date.now()}`,
+      runtime: runtime.root,
+    };
+
+    const result = await runtime.operations.execute(
+      opName,
+      { prompt: options.goal },
+      opContext,
+    );
+
+    runtime.details.operationCalls.push({
+      name: opName,
+      callId: opContext.callId,
+      isError: !!result.isError,
+    });
+    runtime.details.modelTurns = 1;
+
+    if (!result.content || result.content.trim() === "") {
+      throw new Error(`Subagent "${opName}" returned empty content.`);
+    }
+
+    return result.content;
   } finally {
-    combined.signal.removeEventListener("abort", abortAgent);
     combined.cancel();
   }
 }

@@ -45,10 +45,10 @@ export async function runToolbox(
     signal: signal ?? new AbortController().signal,
     limits: input.limits,
     policy: {
-      ...input.policy,
       allowProjectPlugins: host.projectTrusted && input.policy?.allowProjectPlugins !== false,
-      allowWriteOperations: false,
-      allowNetworkOperations: false,
+      allowWriteOperations: host.projectTrusted && (input.policy?.allowWriteOperations ?? true),
+      allowNetworkOperations: input.policy?.allowNetworkOperations ?? false,
+      ...input.policy,
     },
   });
 

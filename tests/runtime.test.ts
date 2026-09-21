@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -21,7 +21,7 @@ function fakeModel(): Model<any> {
   };
 }
 
-test("catalog is progressive and plugin disposal removes registered operations", async () => {
+test("catalog is progressive and subagent plugin disposal removes registered operations", async () => {
   const cwd = await mkdtemp(path.join(os.tmpdir(), "pi-cordis-toolbox-test-"));
   try {
     const runtime = new ToolboxRuntime({
@@ -32,12 +32,24 @@ test("catalog is progressive and plugin disposal removes registered operations",
     });
     await runtime.initialize();
     assert.deepEqual(runtime.operations.list(), []);
-    const matches = runtime.catalog.search("read workspace");
-    assert.equal(matches[0]?.manifest.id, "workspace-read");
-    await runtime.loader.load("workspace-read", runtime.limits.maxPlugins);
-    assert.ok(runtime.operations.get("workspace.read_file"));
+
+    // Verify subagent discovery
+    const cursorMatches = runtime.catalog.search("cursor navigation search");
+    assert.ok(cursorMatches.some((m) => m.manifest.id === "cursor-subagent"));
+
+    const piMatches = runtime.catalog.search("pi research documentation");
+    assert.ok(piMatches.some((m) => m.manifest.id === "pi-subagent"));
+
+    // Load cursor subagent
+    await runtime.loader.load("cursor-subagent", runtime.limits.maxPlugins);
+    assert.ok(runtime.operations.get("cursor.ask"));
+    assert.ok(runtime.operations.get("cursor.execute"));
+
+    // Disposal removes operations
     await runtime.loader.dispose();
-    assert.equal(runtime.operations.get("workspace.read_file"), undefined);
+    assert.equal(runtime.operations.get("cursor.ask"), undefined);
+    assert.equal(runtime.operations.get("cursor.execute"), undefined);
+
     await runtime.dispose();
     assert.equal(runtime.details.disposal, "completed");
   } finally {
@@ -45,12 +57,10 @@ test("catalog is progressive and plugin disposal removes registered operations",
   }
 });
 
-test("workspace plugin enforces workspace boundary", async () => {
+test("subagent rejects escaping target workdir", async () => {
   const cwd = await mkdtemp(path.join(os.tmpdir(), "pi-cordis-toolbox-test-"));
   const outside = await mkdtemp(path.join(os.tmpdir(), "pi-cordis-toolbox-outside-"));
   try {
-    await writeFile(path.join(cwd, "inside.txt"), "inside\nsecond\n", "utf8");
-    await writeFile(path.join(outside, "secret.txt"), "secret", "utf8");
     const runtime = new ToolboxRuntime({
       packageRoot: path.resolve(import.meta.dirname, ".."),
       cwd,
@@ -58,22 +68,24 @@ test("workspace plugin enforces workspace boundary", async () => {
       signal: new AbortController().signal,
     });
     await runtime.initialize();
-    await runtime.loader.load("workspace-read", runtime.limits.maxPlugins);
-    const result = await runtime.operations.execute("workspace.read_file", { path: "inside.txt" }, {
-      cwd,
-      policy: runtime.policy,
-      callId: "test",
-      signal: new AbortController().signal,
-      runtime: runtime.root,
-    });
-    assert.match(result.content, /inside/);
-    await assert.rejects(() => runtime.operations.execute("workspace.read_file", { path: path.join(outside, "secret.txt") }, {
-      cwd,
-      policy: runtime.policy,
-      callId: "test",
-      signal: new AbortController().signal,
-      runtime: runtime.root,
-    }), /outside the workspace/);
+    await runtime.loader.load("cursor-subagent", runtime.limits.maxPlugins);
+
+    await assert.rejects(
+      () =>
+        runtime.operations.execute(
+          "cursor.ask",
+          { prompt: "ping", workdir: path.join("..", path.basename(outside)) },
+          {
+            cwd,
+            policy: runtime.policy,
+            callId: "test-boundary",
+            signal: new AbortController().signal,
+            runtime: runtime.root,
+          },
+        ),
+      /escapes the workspace/,
+    );
+
     await runtime.dispose();
   } finally {
     await rm(cwd, { recursive: true, force: true });

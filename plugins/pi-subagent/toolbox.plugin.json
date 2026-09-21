@@ -1,0 +1,23 @@
+{
+  "id": "pi-subagent",
+  "name": "Pi Subagent",
+  "version": "0.1.0",
+  "description": "Delegate general research, documentation, terminal tasks, and codebase reconnaissance to an isolated Pi subagent.",
+  "keywords": [
+    "pi",
+    "subagent",
+    "recon",
+    "research",
+    "documentation",
+    "cli"
+  ],
+  "capabilities": [
+    "pi general task",
+    "pi research",
+    "pi documentation",
+    "delegate pi task"
+  ],
+  "entry": "index.ts",
+  "readme": "PLUGIN.md",
+  "risk": "read-only"
+}

@@ -105,6 +105,15 @@ export interface ToolboxAgentTool extends AgentTool<any, any> {
   toolboxKind?: "meta" | "operation";
 }
 
+export interface JevRoutingInfo {
+  model: string;
+  targetAgent: "codex" | "cursor" | "pi";
+  requiresWrite: boolean;
+  confidence: number;
+  probabilities: Record<string, number>;
+  complexity: number;
+}
+
 export interface ToolboxRunDetails {
   discoveredPlugins: Array<{ id: string; source: CatalogRecord["source"] }>;
   loadedPlugins: string[];
@@ -114,6 +123,7 @@ export interface ToolboxRunDetails {
     isError: boolean;
   }>;
   modelTurns: number;
+  routing?: JevRoutingInfo;
   usage: {
     input: number;
     output: number;

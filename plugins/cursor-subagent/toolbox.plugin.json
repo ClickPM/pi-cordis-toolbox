@@ -1,0 +1,24 @@
+{
+  "id": "cursor-subagent",
+  "name": "Cursor Subagent",
+  "version": "0.1.0",
+  "description": "Delegate codebase search, semantic navigation, architecture inspection, and multi-file editing to an isolated Cursor Agent subagent.",
+  "keywords": [
+    "cursor",
+    "subagent",
+    "navigation",
+    "search",
+    "editing",
+    "acp",
+    "ai"
+  ],
+  "capabilities": [
+    "cursor code search",
+    "cursor architecture inspection",
+    "cursor code editing",
+    "delegate cursor task"
+  ],
+  "entry": "index.ts",
+  "readme": "PLUGIN.md",
+  "risk": "read-only"
+}

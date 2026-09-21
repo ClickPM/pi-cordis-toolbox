@@ -1,11 +1,15 @@
 {
   "name": "pi-cordis-toolbox",
-  "version": "0.1.1",
-  "description": "A fixed Pi toolbox_run facade backed by an ephemeral Cordis plugin runtime and nested agent loop.",
+  "version": "0.2.0",
+  "description": "Pi heterogeneous subagent orchestrator powered by Cordis microkernel and TypeSafe Jev intent routing.",
   "type": "module",
   "keywords": [
     "pi-package",
     "cordis",
+    "subagent",
+    "typesafe",
+    "codex",
+    "cursor",
     "agent-tools"
   ],
   "pi": {
@@ -20,6 +24,7 @@
   },
   "dependencies": {
     "@deepseek-ai/cordis": "4.0.1",
+    "@typesafe-ai/sdk": "^0.6.0",
     "jiti": "2.7.0"
   },
   "peerDependencies": {
