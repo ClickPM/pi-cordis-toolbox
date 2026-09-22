@@ -4,16 +4,19 @@ import type { ExecutionMode, JevPlan } from "./types.ts";
 
 export function fallbackJudge(goal: string): JevPlan {
   const lower = goal.toLowerCase();
-  const requiresWrite = /write|create|modify|edit|implement|fix|refactor|add|delete|remove|update|写|改|加|修复|创建|实现/.test(
-    lower,
-  );
-  const requiresNetwork = /fetch|http|url|curl|api|web|download|联网|抓取|获取网页|下载/.test(
-    lower,
-  );
-  const isDiffOrCompare = /diff|compare|比较|对比/.test(lower);
-  const isDocOrResearch = /doc|summary|summarize|explain|readme|research|文档|总结|总结一下|调研/.test(
-    lower,
-  );
+  const requiresWrite =
+    /\b(write|creates?|creating|modify|modifying|edit|edits?|editing|implement|implements?|implementing|fix|fixes|fixing|refactor|refactoring|add|adds?|adding|delete|deletes?|deleting|remove|removes?|removing|update|updates?|updating)\b|[写改加]|修复|创建|实现/.test(
+      lower,
+    );
+  const requiresNetwork =
+    /https?:\/\/|\b(fetch|http|https|url|curl|api|web|download)\b|联网|抓取|获取网页|下载/.test(
+      lower,
+    );
+  const isDiffOrCompare = /\b(diff|compare)\b|比较|对比/.test(lower);
+  const isDocOrResearch =
+    /\b(doc|docs|documentation|summary|summarize|explain|readme|research)\b|文档|总结|总结一下|调研/.test(
+      lower,
+    );
 
   let targetAgent: "codex" | "pi" = "codex";
   if (isDocOrResearch && !requiresWrite) {
